@@ -28,18 +28,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.CONTEXT (1).executor": "Run",
-    "Python.CONTEXT (2).executor": "Run",
-    "Python.CONTEXT.executor": "Run",
-    "Python.JuegoUno.executor": "Run",
-    "Python.juegoUno_2.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.CONTEXT (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.CONTEXT (2).executor&quot;: &quot;Run&quot;,
+    &quot;Python.CONTEXT.executor&quot;: &quot;Run&quot;,
+    &quot;Python.JuegoUno.executor&quot;: &quot;Run&quot;,
+    &quot;Python.juegoUno_2.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.juegoUno_2">
     <configuration name="CONTEXT (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="JuegoUno" />
