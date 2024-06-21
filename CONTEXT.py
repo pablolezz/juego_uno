@@ -16,7 +16,7 @@ class Window_context:
         pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "lobby.mp3"))
         pygame.mixer.music.play(-1)
 
-    def context_execute(self):
+    def  context_execute(self):
         self.game_controller.update()
 
 def main():

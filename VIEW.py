@@ -2,6 +2,7 @@ import pygame
 import os
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
+
 class Button:
     def __init__(self, x, y, w, h):
         self.x = x
@@ -27,11 +28,9 @@ class Text:
         self.position = (self.x, self.y)
         self.text = self.font.render(text, True, (255, 255, 255))
 
-
 class CardSprite:
-
     def __init__(self):
-        self.sheet = pygame.image.load(os.path.join(main_dir, 'UNO', "Copia UNO.jpg"))
+        self.sheet = pygame.image.load(os.path.join(main_dir, 'UNO', "gif_uno.gif"))
         self.x = self.sheet.get_width()  # 800
         self.y = self.sheet.get_height()  # 882
 
