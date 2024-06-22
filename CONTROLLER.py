@@ -41,7 +41,7 @@ class Game_controller:
         self.view = Game_view(self.main_surface)
 
 
-    def update(self, main_surface):
+    def update(self):
         while True:
             print(self.game_state)
             self.event_poll()
