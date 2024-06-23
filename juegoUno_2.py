@@ -192,6 +192,7 @@ class UNOGame:
         self.deck.shuffle()
 
 
+#---done---
     def place_cards(self):
         # Definimos un patrón para pegar las cartas una junto a otra
         [paste_x, paste_y] = [64, 480]
@@ -273,7 +274,9 @@ class UNOGame:
         self.update_cards()
         self.blit_buttons(4, 6)
         pygame.display.flip()
-#----------------------------------
+
+# ---done---
+    #----------------------------------
 
     def play_discard(self):
         self.deck.cards = self.discard_deck.cards  # Asignamos al mazo las cartas del mazo de descartes
@@ -349,6 +352,8 @@ class UNOGame:
         self.names = [self.player_name, "AI"]
         self.main_surface.fill(self.surface_color)
 
+#---------------------------------------
+#esto de abajo
     def play_UNO(self):  # Iniciamos la partida de UNO
         # Creamos las manos del juego
         pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "lobby.mp3"))
@@ -360,9 +365,14 @@ class UNOGame:
         self.deck.deal(self.hands, 7 * len(self.names))  # Tomamos el objeto mazo que pertenece al objeto juego (self),
         # y repartimos siete cartas a cada jugador
 
+#----------------------------------------------
         # Colocamos las cartas sobre el tablero
-        self.place_cards()
 
+# -------VIEW
+        self.place_cards()
+# -------VIEW
+
+# -------MODEL
         # Sacamos una carta para empezar a jugar
         self.card_in_play = self.deck.pop()
         self.card_in_play.position = self.play_area
@@ -376,11 +386,17 @@ class UNOGame:
         pierdeturno = 0
         self.has_drawn = 2  # Para cubrir el caso en que la carta inicial sea una carta de efectos
         i = 0
+# -------MODEL
 
+#-------VIEW
         self.place_buttons()
         self.update_surface()
+# -------VIEW
+
+# -------MODEL
         self.discard_deck = Deck()  # Creamos un mazo de descartes
         self.discard_deck.cards = []  # Vaciamos el mazo de descartes
+# -------MODEL
 
         while True:
             # Comenzamos el bucle estableciendo los efectos en función de la carta en juego (self.card_in_play):
