@@ -400,155 +400,170 @@ class UNOGame:
 
         while True:
             # Comenzamos el bucle estableciendo los efectos en función de la carta en juego (self.card_in_play):
+#---CONTROLLER---
+            self._check_card_in_play_effect(pierdeturno, i)
+#---CONTROLLER---
 
-            if self.card_in_play.rank == 10:  # "pierdeturno": # El turno pasará al otro jugador
-                if self.has_drawn == 0:
-                    pierdeturno += 1
-                    self.has_drawn = 1
-
-            elif self.card_in_play.rank == 11:  # "cambiasentido":
-                self.has_drawn = 1  # Esto es simplemente para poder simplificar la fórmula de efectos y expresarla como 10 <= rank <= 14
-
-            elif self.card_in_play.rank == 12:  # "robados":
-                if self.has_drawn != 1:  # No queremos que al comenzar el siguiente turno se vuelvan a robar dos cartas
-                    for n in range(2):
-                        if self.deck.is_empty():  # Si no quedan cartas en el mazo
-                            self.play_discard()
-                        self.hands[(i + 1) % len(self.hands)].cards.append(
-                            self.deck.pop())  # Robo dos cartas y las añado a mi mano
-                    self.has_drawn = 1
-
-            elif self.card_in_play.rank == 13:  # "eligecolor":
-                if self.has_drawn != 1:  # No queremos que al final de este turno se vuelvan a robar cuatro cartas
-                    # Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
-                    if self.hands[i].status == 1:  # si el jugador es IA
-                        rng = random.Random()
-                        self.color = rng.randrange(0, 4)
-                    else:  # si el jugador es humano
-                        self.blit_buttons(0, 4)
-                        pygame.display.flip()
-                        has_picked_color = 0
-                        while has_picked_color == 0:
-                            for event in pygame.event.get():
-                                if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-                                    place_of_click = event.dict["pos"]
-                                    b = 0
-                                    for button in self.all_buttons[0:4]:
-                                        if button.contains_point(place_of_click):
-                                            has_picked_color = 1
-                                            self.color = b
-                                        b += 1
-                    self.card_in_play.suit = self.color
-                    self.color_in_play = self.card_in_play.suits[self.color]
-                    self.has_drawn = 1
-
-            elif self.card_in_play.rank == 14:  # "robacuatro":
-                if self.has_drawn != 1:  # No queremos que al final de este turno se vuelvan a robar cuatro cartas
-                    for n in range(4):
-                        if self.deck.is_empty():  # Si no quedan cartas en el mazo
-                            self.play_discard()
-                        self.hands[(i + 1) % len(self.hands)].cards.append(
-                            self.deck.pop())  # Robo cuatro cartas y las añado a mi mano
-                    # Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
-                    if self.hands[i].status == 1:  # si el jugador es IA
-                        rng = random.Random()
-                        self.color = rng.randrange(0, 4)
-                    else:  # si el jugador es humano
-                        self.blit_buttons(0, 4)
-                        pygame.display.flip()
-                        has_picked_color = 0
-
-                        while has_picked_color == 0:
-                            for event in pygame.event.get():
-                                if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-                                    place_of_click = event.dict["pos"]
-                                    b = 0
-                                    for button in self.all_buttons[0:4]:
-                                        if button.contains_point(place_of_click):
-                                            has_picked_color = 1
-                                            self.color = b
-                                        b += 1
-                    self.card_in_play.suit = self.color
-                    self.color_in_play = self.card_in_play.suits[self.color]
-                    self.has_drawn = 1
-
+#---VIEW---
             # Actualizamos las cartas
             self.place_cards()
             self.update_surface()
+#---VIEW---
 
+#---CONTROLLER---
             # Los efectos ya están consolidados (esperemos). Ahora hay que definir el cambio de turno
             turn += 1
             i = (turn + pierdeturno) % len(
                 self.hands)  # 0 en el primer turno, salvo que la primera carta en juego sea pierdeturno
             self.playable_cards = []
             suits_in_hand = []
-            hand = self.hands[i].cards  # Llamamos hand a la mano que está jugando, para que el código sea más legible
 
-            # Comienza el siguiente turno, propiamente dicho
-            # Determinamos si tenemos cartas en la mano que podamos jugar:
-            for card in hand:
-                suits_in_hand.append(
-                    card.suit)  # Anotamos el color de cada carta, para comprobar después si podemos usar el comodín robacuatro
-                if card.suit == self.color or card.rank == self.card_in_play.rank or card.rank == 13:  # "eligecolor":
-                    # Si la carta comparte color o número con la que está en juego, o si es el comodín de elegir color
-                    self.playable_cards.append(card)
+            self._player_turn(self.hands[i], suits_in_hand)
+#---CONTROLLER---
 
-            if self.color not in suits_in_hand:  # Si no tenemos ninguna carta del mismo color que la que está en el área de juego
-                for card in hand:
-                    if card.rank == 14:  # "robacuatro":
-                        self.playable_cards.append(card)  # Lo añadimos a las cartas que podemos jugar
-
-            if self.hands[i].status == 1:  # si el jugador es IA
-                self.AI_plays(hand)
-
-            else:  # si el jugador es humano
-                self.human_plays(hand)
-
-            # Consideraciones de final de turno, a continuación
-
-            self.color = self.card_in_play.suit
-            self.color_in_play = self.card_in_play.suits[self.color]
-
-            if self.deck.is_empty():  # Si no quedan cartas en el mazo
-                self.play_discard()
-
-            self.place_cards()
-            self.update_surface()
-
-            if self.hands[i].is_empty():  # Si no quedan cartas en la mano
-                end_game = 0
-                self.main_surface.fill(self.surface_color)
-                if self.hands[i].name == self.player_name:  # Ha ganado el jugador humano
-                    pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "win.mp3"))
-                    pygame.mixer.music.play(-1)
-                    win = Text(100, 300, "¡Enhorabuena, " + self.player_name + "! Has ganado la partida")
-                    self.main_surface.blit(win.text, win.position)
-                else:  # Ha ganado la IA
-                    pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "loss.mp3"))
-                    pygame.mixer.music.play(-1)
-                    loss = Text(100, 300, "¡Lo sentimos, " + self.player_name + "! El ordenador ha ganado la partida")
-                    self.main_surface.blit(loss.text, loss.position)
-                self.blit_buttons(6, 8)
-                pygame.display.flip()
-                while end_game == 0:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            sys.exit()
-                        if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-                            place_of_click = event.dict["pos"]
-                            for button in self.all_buttons[6:8]:
-                                if button.contains_point(place_of_click):
-                                    if button == self.all_buttons[6]:
-                                        end_game = 1
-                                        self.deck = Deck()
-                                        self.deck.shuffle()
-                                        self.play_UNO()
-                                    else:
-                                        pygame.quit()
-                                        sys.exit()
-
+#---VIEW---
             pygame.display.flip()
+#---VIEW---
+
+    def _player_turn(self, player, suits_in_hand):
+        hand = player.cards  # Llamamos hand a la mano que está jugando, para que el código sea más legible
+
+        # Comienza el siguiente turno, propiamente dicho
+        # Determinamos si tenemos cartas en la mano que podamos jugar:
+        for card in hand:
+            suits_in_hand.append(
+                card.suit)  # Anotamos el color de cada carta, para comprobar después si podemos usar el comodín robacuatro
+            if card.suit == self.color or card.rank == self.card_in_play.rank or card.rank == 13:  # "eligecolor":
+                # Si la carta comparte color o número con la que está en juego, o si es el comodín de elegir color
+                self.playable_cards.append(card)
+
+        if self.color not in suits_in_hand:  # Si no tenemos ninguna carta del mismo color que la que está en el área de juego
+            for card in hand:
+                if card.rank == 14:  # "robacuatro":
+                    self.playable_cards.append(card)  # Lo añadimos a las cartas que podemos jugar
+
+        if player.status == 1:  # si el jugador es IA
+            self.AI_plays(hand)
+
+        else:  # si el jugador es humano
+            self.human_plays(hand)
+
+        # Consideraciones de final de turno, a continuación
+
+        self.color = self.card_in_play.suit
+        self.color_in_play = self.card_in_play.suits[self.color]
+
+        if self.deck.is_empty():  # Si no quedan cartas en el mazo
+            self.play_discard()
+
+        self.place_cards()
+        self.update_surface()
+
+        if player.is_empty():  # Si no quedan cartas en la mano
+            end_game = 0
+            self.main_surface.fill(self.surface_color)
+            if player.name == self.player_name:  # Ha ganado el jugador humano
+                pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "win.mp3"))
+                pygame.mixer.music.play(-1)
+                win = Text(100, 300, "¡Enhorabuena, " + self.player_name + "! Has ganado la partida")
+                self.main_surface.blit(win.text, win.position)
+            else:  # Ha ganado la IA
+                pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "loss.mp3"))
+                pygame.mixer.music.play(-1)
+                loss = Text(100, 300, "¡Lo sentimos, " + self.player_name + "! El ordenador ha ganado la partida")
+                self.main_surface.blit(loss.text, loss.position)
+            self.blit_buttons(6, 8)
+            pygame.display.flip()
+            while end_game == 0:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
+                        place_of_click = event.dict["pos"]
+                        for button in self.all_buttons[6:8]:
+                            if button.contains_point(place_of_click):
+                                if button == self.all_buttons[6]:
+                                    end_game = 1
+                                    self.deck = Deck()
+                                    self.deck.shuffle()
+                                    self.play_UNO()
+                                else:
+                                    pygame.quit()
+                                    sys.exit()
+
+    def _check_card_in_play_effect(self, pierdeturno, i):
+        if self.card_in_play.rank == 10:  # "pierdeturno": # El turno pasará al otro jugador
+            if self.has_drawn == 0:
+                pierdeturno += 1
+                self.has_drawn = 1
+
+        elif self.card_in_play.rank == 11:  # "cambiasentido":
+            self.has_drawn = 1  # Esto es simplemente para poder simplificar la fórmula de efectos y expresarla como 10 <= rank <= 14
+
+        elif self.card_in_play.rank == 12:  # "robados":
+            # No queremos que al comenzar el siguiente turno se vuelvan a robar dos cartas
+            if self.has_drawn != 1:
+                for n in range(2):
+                    if self.deck.is_empty():  # Si no quedan cartas en el mazo
+                        self.play_discard()
+                    self.hands[(i + 1) % len(self.hands)].cards.append(
+                        self.deck.pop())  # Robo dos cartas y las añado a mi mano
+                self.has_drawn = 1
+
+        elif self.card_in_play.rank == 13:  # "eligecolor":
+            if self.has_drawn != 1:  # No queremos que al final de este turno se vuelvan a robar cuatro cartas
+                # Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
+                if self.hands[i].status == 1:  # si el jugador es IA
+                    rng = random.Random()
+                    self.color = rng.randrange(0, 4)
+                else:  # si el jugador es humano
+                    self.blit_buttons(0, 4)
+                    pygame.display.flip()
+                    has_picked_color = 0
+                    while has_picked_color == 0:
+                        for event in pygame.event.get():
+                            if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
+                                place_of_click = event.dict["pos"]
+                                b = 0
+                                for button in self.all_buttons[0:4]:
+                                    if button.contains_point(place_of_click):
+                                        has_picked_color = 1
+                                        self.color = b
+                                    b += 1
+                self.card_in_play.suit = self.color
+                self.color_in_play = self.card_in_play.suits[self.color]
+                self.has_drawn = 1
+
+        elif self.card_in_play.rank == 14:  # "robacuatro":
+            if self.has_drawn != 1:  # No queremos que al final de este turno se vuelvan a robar cuatro cartas
+                for n in range(4):
+                    if self.deck.is_empty():  # Si no quedan cartas en el mazo
+                        self.play_discard()
+                    self.hands[(i + 1) % len(self.hands)].cards.append(
+                        self.deck.pop())  # Robo cuatro cartas y las añado a mi mano
+                # Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
+                if self.hands[i].status == 1:  # si el jugador es IA
+                    rng = random.Random()
+                    self.color = rng.randrange(0, 4)
+                else:  # si el jugador es humano
+                    self.blit_buttons(0, 4)
+                    pygame.display.flip()
+                    has_picked_color = 0
+
+                    while has_picked_color == 0:
+                        for event in pygame.event.get():
+                            if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
+                                place_of_click = event.dict["pos"]
+                                b = 0
+                                for button in self.all_buttons[0:4]:
+                                    if button.contains_point(place_of_click):
+                                        has_picked_color = 1
+                                        self.color = b
+                                    b += 1
+                self.card_in_play.suit = self.color
+                self.color_in_play = self.card_in_play.suits[self.color]
+                self.has_drawn = 1
 
     def AI_plays(self, hand):
         if not self.playable_cards:  # No podemos jugar ninguna carta, tenemos que robar
