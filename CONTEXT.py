@@ -4,6 +4,7 @@ from CONTROLLER import Game_controller
 from pygame import *
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
+
 class Window_context:
 	def __init__(self):
 		self._game_controller = Game_controller(pygame.display.set_mode((1280, 640)))

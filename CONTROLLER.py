@@ -12,10 +12,10 @@ class Game_controller:
 	def __init__(self, main_surface):
 		self.model = Game(Player(""), Player("AI"))
 		self.view = Game_view(main_surface)  # Pasar el controlador como argumento a la vista
-		self.game_state = 1
-		self.game_started = False  # Para controlar si el juego ya ha comenzado
+		self.game_state =1
+		self.game_started = False
+		self.pick_color = False
 		self.event = pygame.event.poll()
-
 	def _start_update(self):
 		if self.view.start_update():
 			self.game_state = 2
@@ -34,10 +34,12 @@ class Game_controller:
 		self.game_started = True
 		
 	def _game_update(self):
-		self._game_logic_update()
+		self._player_turn(self.model.get_current_player())
 		self.view.game_update(self.model)
-
+	def ending_update(self):
+		self.view.ending_view(self.model)
 	def update(self):
+
 		while True:
 			self.event = pygame.event.poll()
 			self.view.event_poll_QUIT(self.event)
@@ -51,160 +53,86 @@ class Game_controller:
 						self._game_init()
 					else:
 						self._game_update()
-
-
-	def _game_logic_update(self):
-		# Los efectos ya están consolidados (esperemos). Ahora hay que definir el cambio de turno
-		self.playable_cards = []
-		suits_in_hand = []
-
-		self._player_turn(self.model.getCurrentPlayer(), suits_in_hand)
-		#self._check_card_in_play_effect()
+				case 4:
+						self.ending_update()
 
 	def _go_next_turn(self):
 		self.model.current_player += 1
 		if self.model.current_player == len(self.model.players):
 			self.model.current_player = 0
 
-	def _player_turn(self, player, suits_in_hand):
+	def _player_turn(self, player):
 		if player.name == "AI":
 			self.AI_plays(player.hand)
 		else:
 			self.human_plays(player.hand)
 
-#---CHECK IF GAME HAS ENDED---
-		# Consideraciones de final de turno, a continuación
-		if self.model.deck.is_empty():  # Si no quedan cartas en el mazo
-			self.model.deck.refill_deck_from_discard()
+		if self.pick_color:
+			self._pick_card_color()
+		
+		self._check_if_game_has_ended(player)
 
-		if player.hand.is_empty():  # Si no quedan cartas en la mano
-			#   Cambiar al view de EndGame
+	def _check_if_game_has_ended(self, player):
+		if player.hand.is_empty():
 			self.game_started = False
-			self.game_state = 1
-
-			#self.main_surface.fill(self.surface_color)
-			#if player.name == "AI":
-				#pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "loss.mp3"))
-				#pygame.mixer.music.play(-1)
-				# loss = Text(100, 300, "¡Lo sentimos, " + self.player_name + "! El ordenador ha ganado la partida")
-				# self.main_surface.blit(loss.text, loss.position)
-			#else:
-				#pygame.mixer.music.load(os.path.join(main_dir, 'UNO', "win.mp3"))
-				#pygame.mixer.music.play(-1)
-				# win = Text(100, 300, "¡Enhorabuena, " + self.player_name + "! Has ganado la partida")
-				# self.main_surface.blit(win.text, win.position)
-			#self.blit_buttons(6, 8)
-			'''while end_game == 0:
-			   for event in pygame.event.get():
-					if event.type == pygame.QUIT:
-						pygame.quit()
-						sys.exit()
-					if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-						place_of_click = event.dict["pos"]
-						for button in self.all_buttons[6:8]:
-							if button.contains_point(place_of_click):
-								if button == self.all_buttons[6]:
-									end_game = 1
-									self.deck = Deck()
-									self.deck.shuffle()
-									self.play_UNO()
-								else:
-									pygame.quit()
-									sys.exit()'''
-
-	def _check_card_in_play_effect(self):
-		if self.model.card_in_play.rank == 10:  # "pierdeturno": # El turno pasará al otro jugador
-			self._go_next_turn()
-
-		elif self.model.card_in_play.rank == 11:  # "cambiasentido":
-			self._go_next_turn()
-
-		elif self.model.card_in_play.rank == 12:  # "robados":
-			# No queremos que al comenzar el siguiente turno se vuelvan a robar dos cartas
-			self._go_next_turn()
-			for n in range(2):
-				if self.model.deck.is_empty():  # Si no quedan cartas en el mazo
-					self.model.deck.refill_deck_from_discard()
-				# Robo dos cartas y las añado a mi mano
-				self.model.getCurrentPlayer().hand.add(self.model.deck.pop())
-
-		elif self.model.card_in_play.rank == 13:  # "eligecolor":
-			# No queremos que al final de este turno se vuelvan a robar cuatro cartas
-			self._go_next_turn()
-			# Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
-			if self.model.getCurrentPlayer().name == "AI":  # si el jugaselsdor es IA
-				rng = random.Random()
-				#self.color = rng.randrange(0, 4)
-			else:  # si el jugador es humano
-				#self.blit_buttons(0, 4)
-				pygame.display.flip()
-				has_picked_color = 0
-				while has_picked_color == 0:
-					for event in pygame.event.poll():
-						if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-							place_of_click = event.dict["pos"]
-							b = 0
-							'''for button in self.all_buttons[0:4]:
-								if button.contains_point(place_of_click):
-									has_picked_color = 1
-									self.color = b
-								b += 1'''
-		   # self.model.card_in_play.suit = self.color
-
-		elif self.model.card_in_play.rank == 14:  # "robacuatro":
-			self._go_next_turn()  # No queremos que al final de este turno se vuelvan a robar cuatro cartas
-			#self.model.card_in_play.suit = self.color
-			for n in range(4):
-				if self.model.deck.is_empty():  # Si no quedan cartas en el mazo
-					self.model.deck.refill_deck_from_discard()
-				# Robo cuatro cartas y las añado a mi mano
-				self.model.getCurrentPlayer().cards.append(self.model.deck.pop())
-			# Aquí hay que añadir un árbol de decisión según sea jugador IA o jugador humano, para elegir el color
-			if self.model.getCurrentPlayer().name == "AI":
-				rng = random.Random()
-				#self.color = rng.randrange(0, 4)
-			else:  # si el jugador es humano
-				#self.blit_buttons(0, 4)
-				has_picked_color = 0
-
-				while has_picked_color == 0:
-					for event in pygame.event.poll():
-						if event.type == pygame.MOUSEBUTTONDOWN:  # Hemos hecho click
-							place_of_click = event.dict["pos"]
-							b = 0
-							'''for button in self.all_buttons[0:4]:
-								if button.contains_point(place_of_click):
-									has_picked_color = 1
-									self.color = b
-								b += 1'''
+			self.game_state = 4
 
 	def _get_playable_cards(self, cards):
 		playable_cards = []
 		for card in cards:
-			if card.suit == self.model.card_in_play.suit or card.rank == self.model.card_in_play.rank or card.rank == 13:  # "eligecolor":
-				# Si la carta comparte color o número con la que está en juego, o si es el comodín de elegir color
+			if card.suit == self.model.card_in_play.suit or card.rank == self.model.card_in_play.rank or card.rank == 13 or card.rank == 14:
 				playable_cards.append(card)
-		if len(playable_cards) == 0:
-			for card in cards:
-				if card.suit != self.model.card_in_play.suit and (card.rank == 13 or card.rank == 14):
-					playable_cards.append(card)  # Lo añadimos a las cartas que podemos jugar
-
 		return playable_cards
 
 	def _play_card(self, hand, card):
+		print(f"Card played: {card}")
 		self.model.card_in_play = card
 		self.model.card_in_play.position = self.model.play_area
 
-		hand.remove(card)
-		self.model.deck.discard(card)
+		self.model.deck.discard(hand.remove(card))
+		
+		self._go_next_turn()
+		self._check_card_in_play_effect()
 
-	def _draw_card(self, hand):
-		if not self.model.deck.is_empty():
-			hand.add(self.model.deck.pop())
+	def _check_card_in_play_effect(self):
+		if self.model.card_in_play.rank == 11 or self.model.card_in_play.rank == 12:
 			self._go_next_turn()
+		
+		elif self.model.card_in_play.rank == 10:
+			current_player_hand = self.model.get_current_player().hand
+			self._draw_cards(current_player_hand, 2)
+			self._go_next_turn()
+		
+		elif self.model.card_in_play.rank == 13:
+			self._go_next_turn()
+			self.pick_color = True
+
+		elif self.model.card_in_play.rank == 14:
+			current_player_hand = self.model.get_current_player().hand
+			self._draw_cards(current_player_hand, 4)
+			self._go_next_turn()
+			self.pick_color = True
+
+	def _pick_card_color(self):
+		selected_color = -1
+		if self.model.get_current_player().name == "AI":
+			selected_color = random.Random().randrange(0, 4)
 		else:
-			self.model.deck.refill_deck_from_discard()
-			self._draw_card(hand)
+			selected_color = self.view.poll_color(self.event)
+		
+		if selected_color != -1:
+			card_is_eligecolor = self.model.card_in_play.rank == 13
+			self.model.card_in_play = self.model.deck.color_cards[selected_color]
+			self.pick_color = False
+			
+			if (card_is_eligecolor):
+				self._go_next_turn()
+
+	def _draw_cards(self, hand, number_of_cards):
+		for i in range(0, number_of_cards):
+			if self.model.deck.is_empty():
+				self.model.deck.refill_deck_from_discard()
+			hand.add(self.model.deck.pop())
 
 	def AI_plays(self, hand):
 		pygame.time.wait(1000)
@@ -213,7 +141,7 @@ class Game_controller:
 			selected_card = playable_cards[random.Random().randrange(0, len(playable_cards))]
 			self._play_card(hand, selected_card)
 		else:
-			self._draw_card(hand)
+			self._draw_cards(hand, 1)
 
 	def human_plays(self, hand):
 		playable_cards = self._get_playable_cards(hand.cards)
@@ -221,11 +149,7 @@ class Game_controller:
 			selected_card = self.view.poll_cards(playable_cards, self.event)
 			if selected_card is not None:
 				self._play_card(hand, selected_card)
-				print(f"Card played: {selected_card}")
-			if self.view.poll_button("PASAR_TURNO", self.event):
-				self._go_next_turn()
-				print("Pasar turno")
-		else:
+		elif not self.pick_color:
 			if self.view.poll_button("ROBAR", self.event):
-				self._draw_card(hand)
+				self._draw_cards(hand, 1)
 				print("Robar carta")

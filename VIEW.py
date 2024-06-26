@@ -19,7 +19,8 @@ class Button(PygameObject):
 		self.rect = pygameRect
 		self.color = color
 		
-		self.text = Text(self.rect.x, self.rect.y, text, text_color, "Arial", 20)
+		self.text = Text(self.rect.x + (self.rect.w / 2), self.rect.y + (self.rect.h / 2), text, text_color, "Arial", 20)
+		self.text.position = (self.rect.x + (self.rect.w / 2) - self.text.text_surface.get_width() / 2, self.rect.y + (self.rect.h / 2) - self.text.text_surface.get_height() / 2)
 
 	def draw(self, surface):
 		surface.fill(self.color, self.rect)
@@ -62,10 +63,6 @@ class CardSprite:
 		rect = pygame.Rect(rectangle)
 		image = pygame.Surface(rect.size)
 		image.blit(self.sheet, (0, 0), rect)
-		if colorkey is not None:
-			if colorkey == -1:
-				colorkey = image.get_at((0, 0))
-			image.set_colorkey(colorkey, pygame.RLEACCEL)
 		return image
 
 class InputBox:
@@ -114,10 +111,10 @@ class Game_view:
 		# Asignamos 3 colores para las 3 "fases"
 		self.surface_color_1 = (19, 136, 8)
 		self.surface_color_2 = (255, 0, 0)
-		self.surface_color_3 = (0, 0, 255)
+		self.surface_color_3 = (0, 255, 255)
 
 		self.play_area = (320, 264)
-		self.colors = ([234, 26, 39], [248, 224, 0], [0, 164, 78], [2, 149, 216], [255, 165, 0], [0, 0, 0])
+		self.colors = ([255, 0, 0], [0, 255, 2], [255, 255, 0], [0, 0, 255])
 
 	def event_poll_QUIT(self, event):
 		if event.type == pygame.QUIT:
@@ -143,7 +140,7 @@ class Game_view:
 	def login_update(self):
 		type_name_text = Text(500, 100, "¿Cómo te llamas?")
 		input_box = InputBox(500, 150, 280, 32)
-		start_button = Button(pygame.Rect(540, 300, 200, 50), (255, 255, 255), "CONTINUAR")
+		start_button = Button(pygame.Rect(500, 300, 200, 50), (255, 255, 255), "CONTINUAR")
 
 		while True:
 			for event in pygame.event.get():
@@ -168,14 +165,13 @@ class Game_view:
 	def game_update(self, game_model):
 		self.main_surface.fill(self.surface_color_3)
 		
-		player_turn_text = Text(300, 200, f"Player turn: {game_model.getCurrentPlayer().name}")
+		player_turn_text = Text(300, 200, f"Player turn: {game_model.get_current_player().name}")
 		player_turn_text.draw(self.main_surface)
 
 		self._update_game_cards(game_model)
 		self._render_game_cards(game_model)
 
 		self._render_game_buttons()
-
 		pygame.display.flip()
 
 
@@ -195,6 +191,27 @@ class Game_view:
 					card.position = [paste_x, paste_y]
 					paste_x += 85
 
+	def ending_view(self,model):
+		self.main_surface.fill(self.surface_color_1)
+		print(model.get_next_player)
+		if model.get_next_player == 1:
+
+			final_text_vicoria = Text(200, 100, "Has ganado!!, quieres volver a jugar ?")
+			final_text_vicoria.draw(self.main_surface)
+
+		else:
+
+			final_text_derrota = Text(200, 100, "Has perdido, quieres volver a jugar ?")
+			final_text_derrota.draw(self.main_surface)
+
+		VOLVER_A_JUGAR = Button(pygame.Rect(225, 400, 175, 30), self.colors[0], "Volver a jugar")
+		SALIR = Button(pygame.Rect(575, 400, 175, 30), self.colors[3], "Salir del juego")
+
+		VOLVER_A_JUGAR.draw(self.main_surface)
+		SALIR.draw(self.main_surface)
+
+
+		pygame.display.flip()
 	def _render_game_cards(self, game_model):
 		for player in game_model.players:
 			for card in player.hand.cards:
@@ -221,16 +238,12 @@ class Game_view:
 		self.all_buttons["COLOR_2"] = Button(pygame.Rect(x + 100,	y + 145, 45, 45), self.colors[2])
 		self.all_buttons["COLOR_3"] = Button(pygame.Rect(x + 150,	y + 145, 45, 45), self.colors[3])
 
-		self.all_buttons["PASAR_TURNO"] =		Button(pygame.Rect(850, 275, 125, 25), (255, 255, 255), "Pasar turno")
-		self.all_buttons["COLOR_EN_JUEGO"] =	Button(pygame.Rect(750, 325, 330, 25), (255, 255, 255), "El color en juego es el {0}")
-
 		self.all_buttons["ROBAR"] = Button(pygame.Rect(650, 245, 125, 25), (255, 255, 255), "Robar carta")
-
-		self.all_buttons["VOLVER_A_JUGAR"] =	Button(pygame.Rect(225, 400, 175, 30), self.colors[0], "Volver a jugar")
-		self.all_buttons["SALIR"] =				Button(pygame.Rect(575, 400, 175, 30), self.colors[3], "Salir del juego")
+		self.all_buttons["VOLVER_A_JUGAR"] = Button(pygame.Rect(225, 400, 175, 30), self.colors[0], "Volver a jugar")
+		self.all_buttons["SALIR"] = Button(pygame.Rect(575, 400, 175, 30), self.colors[3], "Salir del juego")
 		
-		self.all_buttons["VOLVER_A_JUGAR"].is_enabled = False
-		self.all_buttons["SALIR"].is_enabled = False
+		for button in self.all_buttons.values():
+			button.is_enabled = False
 
 	def _render_game_buttons(self):
 		for button in self.all_buttons.values():
@@ -238,7 +251,17 @@ class Game_view:
 				button.draw(self.main_surface)
 
 	def poll_button(self, button_name, event):
-		if self.all_buttons[button_name].is_enabled:
-			return self.all_buttons[button_name].handle_event(event)
+		self.all_buttons[button_name].is_enabled = True
+		if self.all_buttons[button_name].handle_event(event):
+			self.all_buttons[button_name].is_enabled = False
+			return True
 		return False
 
+	def poll_color(self, event):
+		for color in range(0, 4):
+			self.all_buttons[f"COLOR_{color}"].is_enabled = True
+			if self.all_buttons[f"COLOR_{color}"].handle_event(event):
+				for i in range(0, 4):
+					self.all_buttons[f"COLOR_{i}"].is_enabled = False
+				return color
+		return -1
