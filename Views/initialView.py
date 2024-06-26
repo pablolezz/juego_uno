@@ -19,6 +19,10 @@ class Initial_view:
         self.colors = ([234, 26, 39], [248, 224, 0], [0, 164, 78], [2, 149, 216], [255, 165, 0], [0, 0, 0])
                          # Rojo, amarillo, verde, azul, naranja, negro
 
+    def event_poll_QUIT(self, event):
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
     def start_view(self):
         self.main_surface.fill(self.surface_color)
         self.font = pygame.font.SysFont("Fixedsys Excelsior", 32)
@@ -49,6 +53,12 @@ class Initial_view:
         text_width = welcome_text.get_width()
         welcome = Text(640 - text_width/2, 580, welcome_text)
         self.main_surface.blit(welcome.text_surface, welcome.position)
+
+        event = pygame.event.poll()
+        if event.type == pygame.KEYDOWN:
+            return True
+
+        pygame.display.flip()
 
     def load_gif_clip(self, gif_filepath):
         # Cargar el GIF como un clip de video usando moviepy

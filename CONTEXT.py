@@ -13,7 +13,7 @@ class Window_context:
 	def context_execute(self):
 		self._game_controller.update()
 
-def pygameInit():
+def  pygameInit():
 	pygame.mixer.pre_init(44100, -16, 2, 2048)
 	pygame.init()
 	pygame.mixer.init()

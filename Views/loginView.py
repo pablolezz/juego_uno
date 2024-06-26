@@ -1,10 +1,103 @@
 import pygame
 import os
+from moviepy.editor import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
+
+class Button:
+    def __init__(self, x, y, width, height, text, fontType="Arial", fontSize=20):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.color = (255, 255, 255)  # Color blanco por defecto
+        self.text = text
+        self.font = pygame.font.SysFont(fontType, fontSize)
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.color, self.rect)
+        if self.text:
+            text_surface = self.font.render(self.text, True, (0, 0, 0))  # Texto negro
+            text_rect = text_surface.get_rect(center=self.rect.center)
+            surface.blit(text_surface, text_rect)
+
+    def contains_point(self, point):
+        return self.rect.collidepoint(point)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                return True
+        return False
+
+class Text:
+    def __init__(self, x, y, text):
+        self.font = pygame.font.SysFont("Fixedsys Excelsior", 48)
+        self.x = x
+        self.y = y
+        self.position = (self.x, self.y)
+        self.text = self.font.render(text, True, (0, 0, 0))
+
+
+class InputBox:
+    def __init__(self, x, y, w, h, text=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color_inactive = pygame.Color(200, 200, 200)
+        self.color_active = pygame.Color(255,255,255)
+        self.color = self.color_inactive
+        self.text = text
+        self.font = pygame.font.Font(None, 32)
+        self.txt_surface = self.font.render(text, True, self.color)
+        self.active = False
+        self.placeholder = 'Escriba el nombre del jugador'
+        self.placeholder_color = (100, 100, 100)
+        self.border_radius = 40
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+            else:
+                self.active = False
+            self.color = self.color_active if self.active else self.color_inactive
+
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    print(self.text)  # Aquí podrías manejar el texto ingresado
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+                self.txt_surface = self.font.render(self.text, True, self.color)
+
+    def draw(self, screen):
+        # Render the text
+        if self.text == '' and not self.active:
+            # Draw placeholder if the box is empty and not active
+            text_surface = self.font.render(self.placeholder, True, (100, 100, 100))
+        else:
+            # Draw current text if there is any
+            text_surface = self.font.render(self.text, True, (0, 0, 0))
+
+        # Adjust the position of the text
+        text_rect = text_surface.get_rect()
+        text_rect.center = self.rect.center
+
+        # Draw the rounded rectangle
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=self.border_radius)
+        pygame.draw.rect(screen, pygame.Color('black'), self.rect, 2, border_radius=self.border_radius)
+
+        # Blit the text surface onto the screen
+        screen.blit(text_surface, text_rect)
+
 class Login_view:
     def __init__(self, screen):
+        self.surface_color_1 = (19, 136, 8)
+        self.surface_color_2 = (255, 0, 0)
+        self.surface_color_3 = (0, 0, 255)
+
         self.screen = screen
         self.font = pygame.font.Font(None, 32)
         self.input_box = pygame.Rect(400, 240, 400, 40)  # Rectángulo para el campo de entrada del nombre
@@ -19,8 +112,44 @@ class Login_view:
         self.main_surface = pygame.display.set_mode((1280, 640))
 
     def start_view(self):
-        # Inicialización de la vista del login
-        pass
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont("Fixedsys Excelsior", 32)
+        Type_name = Text(500, 100, "¿Cómo te llamas?")
+
+        # Load and scale the logo once
+        logo_path = os.path.join(parent_dir, 'UNO', 'login_uno.jpg')
+        logo_surface = pygame.image.load(logo_path)
+        logo_surface = pygame.transform.scale(logo_surface, (1280, 640))
+
+        width = 800
+        heigth = 80
+        input_box = InputBox((1280 - width) // 2, (640 - heigth) // 2, 800, 80)
+
+        start_button = Button(540, 500, 200, 50, "CONTINUAR")
+        start_button.color = button_color = (255, 255, 255)
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                input_box.handle_event(event)
+                if start_button.handle_event(event):
+                    return input_box.text
+
+            self.main_surface.fill(self.surface_color_2)  # Clear the screen
+            self.main_surface.blit(logo_surface, (0, 0))  # Draw the logo image
+            self.main_surface.blit(Type_name.text, Type_name.position)  # Draw the text
+
+            input_box.draw(self.main_surface)  # Draw the input box
+            start_button.draw(self.main_surface)  # Draw the button
+
+            pygame.display.flip()
+            self.clock.tick(30)
+
+    def event_poll_QUIT(self, event):
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
 
     def game_view(self):
         while not self.done:

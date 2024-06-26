@@ -5,24 +5,28 @@ import pygame
 import os
 import sys
 import random
+from Views.initialView import Initial_view
+from Views.loginView import Login_view
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 class Game_controller:
 	def __init__(self, main_surface):
 		self.model = Game(Player(""), Player("AI"))
-		self.view = Game_view(main_surface)  # Pasar el controlador como argumento a la vista
-		self.game_state =1
+		self.view = Initial_view(main_surface)  # Pasar el controlador como argumento a la vista
+		self.game_state = 1
 		self.game_started = False
 		self.pick_color = False
 		self.event = pygame.event.poll()
-	def _start_update(self):
-		if self.view.start_update():
+	def _initial_view(self):
+		self.game_started = True
+		if self.view.start_view():
 			self.game_state = 2
 
+	def _login_view(self):
 
-	def _login_update(self):
-		player_name = self.view.login_update()
+		self.view = Login_view(pygame.display.set_mode((1280, 640)))
+		player_name = self.view.start_view()
 		if player_name != "":
 			self.model = Game(Player(player_name), Player("AI"))
 			self.game_state = 3
@@ -35,6 +39,8 @@ class Game_controller:
 		
 	def _game_update(self):
 		self._player_turn(self.model.get_current_player())
+		self.view = Initial_view(pygame.display.set_mode((1280, 640)))
+		self.view.start_view()
 		self.view.game_update(self.model)
 	def ending_update(self):
 		self.view.ending_view(self.model)
@@ -45,9 +51,9 @@ class Game_controller:
 			self.view.event_poll_QUIT(self.event)
 			match self.game_state:
 				case 1:
-					self._start_update()
+					self._initial_view()
 				case 2:
-					self._login_update()
+					self._login_view()
 				case 3:
 					if not self.game_started:
 						self._game_init()
