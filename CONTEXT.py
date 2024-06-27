@@ -5,7 +5,9 @@ from pygame import *
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
+
 class Window_context:
+
 	def __init__(self):
 		self._game_controller = Game_controller(pygame.display.set_mode((1280, 640)))
 		pygame.display.set_caption('UNO')
@@ -13,7 +15,9 @@ class Window_context:
 	def context_execute(self):
 		self._game_controller.update()
 
-def  pygameInit():
+
+def pygameInit():
+
 	pygame.mixer.pre_init(44100, -16, 2, 2048)
 	pygame.init()
 	pygame.mixer.init()
@@ -22,10 +26,14 @@ def  pygameInit():
 	
 	pygame.event.set_blocked(MOUSEMOTION)
 
+
 def main():
+
 	pygameInit()
 	game = Window_context()
 	game.context_execute()
 
+
 if __name__ == '__main__':
+
 	main()

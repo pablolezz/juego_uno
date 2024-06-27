@@ -1,7 +1,5 @@
 import random
-import pygame
-
-from VIEW import CardSprite
+from CARDSPRITE import CardSprite
 
 class Card:
 	suits = ["Rojo", "Verde", "Amarillo", "Azul", "Comodín"]
@@ -116,7 +114,6 @@ class Player:
 class Game:
 	def __init__(self, player_human, player_ia):
 		self.deck = Deck()
-
 		self.players = [player_ia, player_human]
 		self.current_player = 1
 		
@@ -128,15 +125,16 @@ class Game:
 		return self.players[self.current_player]
 	
 	def get_next_player(self):
-		next_player = self.model.current_player + 1
-		if next_player == len(self.model.players):
+		next_player = self.current_player + 1
+		if next_player == len(self.players):
 			next_player = 0
 		return self.players[next_player]
 
-	def start_game(self):
+
+
+
+	def start_game(self,num_cartas_jugadas):
 		self.deck.shuffle()
-
-		self.deck.deal([player.hand for player in self.players], num_cards=7)
-
+		self.deck.deal([player.hand for player in self.players], num_cards=num_cartas_jugadas)
 		self.card_in_play = self.deck.pop()
 		self.card_in_play.position = self.play_area

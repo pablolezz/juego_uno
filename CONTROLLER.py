@@ -1,59 +1,38 @@
-from MODEL import Card, Player
+from MODEL import Player
 from MODEL import Game
-from VIEW import Button, Game_view
+from VIEW import event_poll_QUIT,GAME_VIEW
 import pygame
 import os
 import sys
 import random
-from Views.initialView import Initial_view
-from Views.loginView import Login_view
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 class Game_controller:
+
 	def __init__(self, main_surface):
+
 		self.model = Game(Player(""), Player("AI"))
-		self.view = Initial_view(main_surface)  # Pasar el controlador como argumento a la vista
+		self.view = GAME_VIEW(main_surface)
 		self.game_state = 1
 		self.game_started = False
 		self.pick_color = False
 		self.event = pygame.event.poll()
-	def _initial_view(self):
-		self.game_started = True
-		if self.view.start_view():
-			self.game_state = 2
-
-	def _login_view(self):
-
-		self.view = Login_view(pygame.display.set_mode((1280, 640)))
-		player_name = self.view.start_view()
-		if player_name != "":
-			self.model = Game(Player(player_name), Player("AI"))
-			self.game_state = 3
+		self.num_cartas_jugadas = 7
+		self.winner = ""
 
 
-	def _game_init(self):
-		self.model.start_game()
-		self.view.game_start(self.model)
-		self.game_started = True
-		
-	def _game_update(self):
-		self._player_turn(self.model.get_current_player())
-		self.view = Initial_view(pygame.display.set_mode((1280, 640)))
-		self.view.start_view()
-		self.view.game_update(self.model)
-	def ending_update(self):
-		self.view.ending_view(self.model)
+
 	def update(self):
 
 		while True:
 			self.event = pygame.event.poll()
-			self.view.event_poll_QUIT(self.event)
+			event_poll_QUIT(self.event)
 			match self.game_state:
 				case 1:
-					self._initial_view()
+					self._start_update()
 				case 2:
-					self._login_view()
+					self._login_update()
 				case 3:
 					if not self.game_started:
 						self._game_init()
@@ -61,6 +40,53 @@ class Game_controller:
 						self._game_update()
 				case 4:
 						self.ending_update()
+
+	def _start_update(self):
+		if self.view.start_update():
+			self.game_state = 2
+
+	def _login_update(self):
+		player_name, cartas_player_name = self.view.login_update()
+		self.game_started = False
+		if player_name != "":
+			if cartas_player_name.isdigit():
+				self.num_cartas_jugadas = int(cartas_player_name)
+			else:
+				self.num_cartas_jugadas = 7
+
+			# Crear el modelo del juego con el nombre del jugador
+			self.model = Game(Player(player_name), Player("AI"))
+			self.game_state = 3
+
+	def _game_init(self):
+
+		self.view.diasable_all_butons()
+		self.model.start_game(self.num_cartas_jugadas)
+		self.view.game_start(self.model)
+		self.game_started = True
+
+	def _game_update(self):
+
+		self._player_turn(self.model.get_current_player())
+		self.view.game_update(self.model)
+
+	def ending_update(self):
+
+		self.view.ending_view(self.winner)
+		button_1 = self.view.poll_button("VOLVER_A_JUGAR", self.event)
+		button_2 = self.view.poll_button("SALIR", self.event)
+
+		if button_1:
+
+			self.game_state = 2
+
+		if button_2:
+
+			pygame.quit()
+			sys.exit()
+
+
+
 
 	def _go_next_turn(self):
 		self.model.current_player += 1
@@ -79,9 +105,16 @@ class Game_controller:
 		self._check_if_game_has_ended(player)
 
 	def _check_if_game_has_ended(self, player):
+
 		if player.hand.is_empty():
+
 			self.game_started = False
+			self.view.diasable_all_butons()
 			self.game_state = 4
+			self.winner = player.name
+
+
+
 
 	def _get_playable_cards(self, cards):
 		playable_cards = []
